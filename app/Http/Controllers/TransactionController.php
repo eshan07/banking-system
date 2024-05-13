@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 
-
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +28,7 @@ class TransactionController extends Controller
                 $this->processTransaction('deposit', $validated, $request);
             });
 
-            return redirect()->route('deposits.index');
+            return redirect()->route('deposits.index')->with('success', 'Deposit successful!');;
         } catch (ValidationException $e) {
             return $this->handleValidationException($e);
         } catch (\Exception $e) {
@@ -55,7 +54,7 @@ class TransactionController extends Controller
                 $this->processTransaction('withdrawal', $validated, $request);
             });
 
-            return redirect()->route('withdrawal.index');
+            return redirect()->route('withdrawal.index')->with('success', 'Withdrawn successful!');;
         } catch (ValidationException $e) {
             return $this->handleValidationException($e);
         } catch (\Exception $e) {
@@ -73,30 +72,33 @@ class TransactionController extends Controller
     protected function processTransaction($type, $validated, $request)
     {
         $user = $request->user();
+        $feeAmount = 0;
         $transactionType = $type === 'deposit' ? 'deposit' : 'withdrawal';
+        if ($type !== 'deposit') {
+            $withdrawalFee = $user->account_type === 'individual' ? 0.025 : 0.015;
 
-        $withdrawalFee = $user->account_type === 'individual' ? 0.025 : 0.015;
+            if ($user->account_type === 'individual' && $type === 'withdrawal') {
+                $today = now()->format('l');
+                $monthlyWithdrawals = $user->transactions()
+                    ->where('transaction_type', 'withdrawal')
+                    ->whereMonth('created_at', now()->month)
+                    ->sum('amount');
 
-        if ($user->account_type === 'individual' && $type === 'withdrawal') {
-            $today = now()->format('l');
-            $monthlyWithdrawals = $user->transactions()
-                ->where('transaction_type', 'withdrawal')
-                ->whereMonth('created_at', now()->month)
-                ->sum('amount');
-
-            if ($today == 'Friday' || $validated['amount'] <= 1000 || $monthlyWithdrawals <= 5000) {
-                $withdrawalFee = 0;
+                if ($today == 'Friday' || $validated['amount'] <= 1000 || $monthlyWithdrawals <= 5000) {
+                    $withdrawalFee = 0;
+                }
             }
-        }
 
-        if ($user->account_type === 'business' && $user->total_withdrawal >= 50000) {
-            $withdrawalFee = 0.015;
-        }
+            if ($user->account_type === 'business' && $user->total_withdrawal >= 50000) {
+                $withdrawalFee = 0.015;
+            }
 
-        $feeAmount = $validated['amount'] * $withdrawalFee;
+            $feeAmount = $validated['amount'] * $withdrawalFee;
 
-        if ($type === 'withdrawal' && $user->balance < $validated['amount'] + $feeAmount) {
-            throw new \Exception('Insufficient balance');
+            if ($type === 'withdrawal' && $user->balance < $validated['amount'] + $feeAmount) {
+                throw new \Exception('Insufficient balance');
+            }
+
         }
 
         $user->transactions()->create([
@@ -105,8 +107,7 @@ class TransactionController extends Controller
             'fee' => $feeAmount,
         ]);
 
-
-        $user->balance -= ($validated['amount'] + $feeAmount);
+        $user->balance += ($type === 'deposit') ? $validated['amount'] : -($validated['amount'] + $feeAmount);
         $user->save();
     }
 

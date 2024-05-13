@@ -4,13 +4,26 @@
             {{ __("Deposit Transactions") }}
         </h2>
     </x-slot>
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Success!</strong>
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- Deposit Add Section -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg" style="height: 18rem;"> <!-- Fixed height -->
-                    <div class="p-6 md:pr-12"> <!-- Adjusted padding -->
+                    <div class="p-6 md:pr-12">
                         <h2 class="text-lg font-semibold mb-4">Add Deposit</h2>
                         <form method="POST" action="{{ route('deposits.store') }}">
                             @csrf
