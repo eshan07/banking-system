@@ -44,7 +44,11 @@
                                 @foreach($transactions as $transaction)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->created_at->format('Y-m-d') }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->transaction_type }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs {{ $transaction->transaction_type === 'withdrawal' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800' }}">
+                                    {{ ucfirst($transaction->transaction_type) }}
+                                </span>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->amount }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->fee }}</td>
                                     </tr>
@@ -56,6 +60,7 @@
                     @endif
                 </div>
             </div>
+
         </div>
     </div>
 
